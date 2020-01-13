@@ -22,7 +22,7 @@ To run:
 
 For example:
 
-	>>> python3.7 main.py 'test.tsv' 'train.tsv' 'test_proc.tsv' 2 100
+	>>> python3.7 main.py test.tsv train.tsv test_proc.tsv 2 100
 
 To run tests:
 
