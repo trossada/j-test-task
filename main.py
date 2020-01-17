@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 
 from feature_scaler import FeatureScaler
-from utils import get_max_feature_index_and_abs_mean_diff
+from utils import get_max_feature_index_and_abs_mean_diff, incremental_mean_and_var
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
@@ -40,6 +40,7 @@ for df in pd.read_csv(train_data_source, sep='\t|,', skiprows=1, header=None, ch
     processed_first_chunk = True
 
 # Standartize test data
+test_mean = test_sample_count = None
 processed_first_chunk = False
 for df in pd.read_csv(test_data_source, sep='\t|,', skiprows=1, header=None, chunksize=chunk_size):
     df.columns = column_titles
@@ -54,12 +55,19 @@ for df in pd.read_csv(test_data_source, sep='\t|,', skiprows=1, header=None, chu
                   mode='a' if processed_first_chunk else 'w',
                   index=False)
     processed_first_chunk = True
+    test_mean, _, test_sample_count = incremental_mean_and_var(
+        X=X,
+        last_mean=test_mean,
+        last_variance=None,
+        last_sample_count=test_sample_count,
+        ignore_var=True
+    )
 
 # Calculating max feature index and abs mean diff
 processed_first_chunk = False
 for df in pd.read_csv(tmp_data_source, sep='\t', chunksize=chunk_size):
     X = df[df.feature_id == feature_id][feature_titles].values.astype(float)
-    X_max_feature_index, X_max_feature_abs_mean_diff = get_max_feature_index_and_abs_mean_diff(X, feature_scaler.mean_)
+    X_max_feature_index, X_max_feature_abs_mean_diff = get_max_feature_index_and_abs_mean_diff(X, test_mean)
     df.insert(0, 'max_feature_2_index', X_max_feature_index)
     df.insert(0, 'max_feature_2_abs_mean_diff', X_max_feature_abs_mean_diff)
     df = df[MAIN_COLUMNS_TITLES
